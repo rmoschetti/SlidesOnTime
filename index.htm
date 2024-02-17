@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Webpage</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 90vh;
+            flex-direction: column;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            width: 90%;
+            max-width: 400px;
+        }
+        input, button {
+            margin: 10px 0;
+            padding: 10px;
+        }
+        button {
+            cursor: pointer;
+        }
+        #runningPresentation {
+            display: none; /* Initially hidden */
+            text-align: center;
+        }
+        .box {
+            border: 1px solid #000;
+            margin: 10px 0;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="initialForm" class="container">
+    <form id="slideForm">
+        <label for="numberOfSlides">Insert the number of slides:</label>
+        <input type="number" id="numberOfSlides" name="numberOfSlides" required>
+
+        <label for="finishTime">Insert the finish time:</label>
+        <input type="time" id="finishTime" name="finishTime" required>
+
+        <button type="button" onclick="begin()">Begin</button>
+    </form>
+</div>
+
+<div id="runningPresentation" class="container" onclick="IncreaseCurrentSlide()">
+    <div class="box">
+        <h2>Time remaining</h2>
+        <p id="timeText">00:00</p>
+    </div>
+    <div class="box">
+        <h2>Slides</h2>
+        <p id="slideText">0</p>
+    </div>
+	<div class="box">
+        <h2>Data</h2>
+		<p>Remaining time: <b id="remainingTime">0</b></p>
+        <p>Your average per slide: <b id="yourAverage">0</b></p>
+		<p>Computed average: <b id="computedAverage">0</b></p>
+    </div>
+</div>
+
+<script>
+	function convertToDateTime(timeString) {
+		var now = new Date();
+		var timeParts = timeString.split(':');
+
+		// Set hours and minutes based on the finishTime
+		now.setHours(timeParts[0], timeParts[1], 0); // Resets seconds to 0 for consistency
+
+		return now;
+	}
+	
+	function formatSeconds(X) {
+		// Taking the absolute value of X to handle negative inputs
+		const absX = Math.abs(X);
+		
+		if (X < 0) Sign = "- ";
+		else Sign = "";
+		
+		// Calculating hours, minutes, and seconds from X
+		const hours = Math.floor(absX / 3600);
+		const minutes = Math.floor((absX % 3600) / 60);
+		const seconds = absX % 60;
+		
+		// Formatting hours, minutes, and seconds to always display two digits
+		const formattedHours = hours.toString().padStart(2, '0');
+		const formattedMinutes = minutes.toString().padStart(2, '0');
+		const formattedSeconds = seconds.toString().padStart(2, '0');
+		
+		// Building the output string conditionally based on hours
+		let timeString = `${Sign} ${formattedMinutes}:${formattedSeconds}`;
+		if (hours > 0) {
+			timeString = `${Sign} ${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+		}
+		return timeString;
+	}
+
+
+    function begin() {
+        numberOfSlides = document.getElementById('numberOfSlides').value;
+        finishTime = convertToDateTime(document.getElementById('finishTime').value);
+		
+		CurrentSlide=0;
+		myAverage=0;
+		PreviousSlide=new Date();
+        // Hide initial form and show presentation running info
+        document.getElementById('initialForm').style.display = 'none';
+        document.getElementById('runningPresentation').style.display = 'flex';
+
+		IncreaseCurrentSlide();
+		const intervalID = setInterval(Update, 1000);
+    }
+
+	function Update() {
+		CurrentSlideTimer=CurrentSlideTimer-1;
+		document.getElementById("slideText").innerHTML=CurrentSlide + "&nbsp; / &nbsp;" + numberOfSlides;
+		document.getElementById("timeText").innerHTML=formatSeconds(CurrentSlideTimer);
+		
+		var TimeNow = new Date();
+		SecondsRemaining=Math.floor((finishTime-TimeNow)/1000);
+		document.getElementById("remainingTime").innerHTML=formatSeconds(SecondsRemaining);
+		document.getElementById("computedAverage").innerHTML=formatSeconds(GetNewOptimalAverage());
+		document.getElementById("yourAverage").innerHTML=formatSeconds(Math.floor(myAverage));
+	}
+	
+	function GetNewOptimalAverage() {
+		var TimeNow=new Date();
+		SecondsPerSlide=Math.floor(((finishTime-TimeNow)/(numberOfSlides-CurrentSlide))/1000);
+		return SecondsPerSlide;
+	}
+	
+	function IncreaseCurrentSlide() {
+	
+		var TimeNow = new Date();
+		myTimeForThisSlide=(TimeNow-PreviousSlide)/1000;
+		console.log(myTimeForThisSlide);
+		if (CurrentSlide>0) myAverage=(myAverage*(CurrentSlide-1)+myTimeForThisSlide)/(CurrentSlide);
+		document.getElementById("yourAverage").innerHTML=formatSeconds(Math.floor(myAverage));
+		
+		
+		CurrentSlide++;
+		CurrentSlideTimer=GetNewOptimalAverage();
+		document.getElementById("slideText").innerHTML=CurrentSlide + "&nbsp; / &nbsp;" + numberOfSlides;
+		document.getElementById("timeText").innerHTML=formatSeconds(CurrentSlideTimer);
+		
+		
+		PreviousSlide=new Date();
+	}
+	
+	
+</script>
+
+</body>
+</html>
